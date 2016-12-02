@@ -1,0 +1,29 @@
+version 1.0;
+
+ns junos = "http://xml.juniper.net/junos/*/junos";
+ns xnm = "http://xml.juniper.net/xnm/1.1/xnm";
+ns jcs = "http://xml.juniper.net/junos/commit-scripts/1.0";
+
+import "../import/junos.xsl";
+
+match / {
+  <op-script-results> {
+    var $filename = "/var/db/scripts/lib/ephemeral0.txt";
+    var $conn_handle = jcs:open();
+
+    var $eph-open = <open-configuration> {
+        <ephemeral>;
+        <ephemeral-instance> 0; /* name of ephemeral instance */
+    }
+    var $open-result = jcs:execute( $conn_handle, $eph-open );
+    <output> $open-result;
+
+    var $load-rpc = <load-configuration url=$filename action="merge" format="text">;
+    var $load-results1 = jcs:execute( $conn_handle, $load-rpc );
+    <output> $load-results1;
+
+    var $load-results2 = jcs:execute( $conn_handle, "commit-configuration");
+    var $eph-close = jcs:execute( $conn_handle, "close-configuration");
+    var $close-results = jcs:close($conn_handle);
+  }
+}

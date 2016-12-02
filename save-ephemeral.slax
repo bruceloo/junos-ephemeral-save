@@ -1,0 +1,33 @@
+version 1.0;
+
+ns junos = "http://xml.juniper.net/junos/*/junos";
+ns xnm = "http://xml.juniper.net/xnm/1.1/xnm";
+ns jcs = "http://xml.juniper.net/junos/commit-scripts/1.0";
+
+import "../import/junos.xsl";
+
+match / {
+  <op-script-results> {
+    var $rpc = <command> "show ephemeral-configuration 0 "; 
+    var $out = jcs:invoke($rpc);
+    if ($out) {
+      var $filename = "/var/db/scripts/lib/ephemeral0.txt";
+      var $file-put-rpc = {
+        <file-put> {
+          <filename> $filename;
+          <encoding> "ascii";
+          <delete-if-exist>;
+          <file-contents> $out;
+        }
+      }
+      var $rpc-results = jcs:invoke( $file-put-rpc );
+      copy-of $rpc-results;
+      <output> "ephemeral db saved to " _ $filename;
+    } else {
+      <xnm:warning> {
+        <message> "ephemeral db is empty. Nothing saved";
+      }
+    }
+  }
+}
+
